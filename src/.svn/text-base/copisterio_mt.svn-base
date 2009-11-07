@@ -1,0 +1,59 @@
+#!/bin/sh
+# This file is based on a piece of code from "Movie Thumnailer".
+# See Licenses for more info
+# Thanks to Starl1te for its great work.
+# Usage: Copisterio_mt PATH_TO_MOVIE PATH_TO_THUMBS/NAME_OF_THUMB PATH_TO_MOVIES
+
+# FOA get config.
+if [ -e /etc/copisterio/mt.config ]
+then
+	source /etc/copisterio/mt.config
+else
+	echo -e "Could not find config, not a fatal error but logs won't be saved"
+fi
+
+if [ $1 ] 
+then
+	echo "File is $1"
+else
+	echo "ERROR, no args provided"
+	exit 
+fi
+
+function getlenght {
+	lenght=`mplayer -identify "$1" -frames 1 -ao null -vo null 2>/dev/null | grep LENGTH | sed -e 's/^.*=//' -e 's/[.].*//'`
+}
+
+function movemovie { 
+	mv "$1" "$3"
+}
+
+function makescreens {
+	# Now, a for repeated 3 times (for the 3 screenshots)
+	st=`echo $[$l/3/60]`
+	for i in `seq 1 3`;
+	do
+		# Get a random screenshot
+		r=$RANDOM; let "r %= 25"
+		mplayer -ss `echo $[$st*60*$i+$r]` -noautosub -frames 1 -ao null -vo png "$1" > /dev/null 2>&1
+	
+		# Move it to PATH-To-THUMBS/NAME_OF_THUMB-NUMBER_OF_THUMB
+		mv 00000001.png "$2-$i.png"
+	done
+}
+
+getlenght
+
+	# If mplayer couldnt identify it, quit with an error and print it to logfile (if any).
+	if [ "$length" = "" ]
+	then 
+		if [ $LOGDIR ]
+		then
+			echo "Couldn't identify file $file" >> $LOGDIR/$LOGFILE
+		fi
+			echo "Couldn't identify file $file" 
+		exit
+	fi
+
+makescreens
+movemovie

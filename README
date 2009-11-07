@@ -1,0 +1,50 @@
+== ABOUT ==
+	Copisterio is a proyect born in Downgrade Zaragoza's Hacklab. 
+	Copisterio is made of terminals with information 
+	(movies, linux distros, free software, ascii porn... ;) ) 
+	and allows it to be copied onto removable discs.
+	Also, copisterio may allow users to add new documents.
+	It's a system similar to face2face's way of share things 
+	(promoted by [compartiresbueno.net])
+
+== LICENSE ==
+	Licensing things are located in "License" File.
+
+== BUGS == 
+	Copisterio has a googlecode webpage where you can 
+	submit bugs. Thanks! 
+
+== CONFIGURATION ==
+	For main configuration (defaults are ok but...) you might 
+	have a look at /usr/share/copisterio/*.config
+	You can change, for example, the command to remove things 
+	from rm to wipe, if you're looking for security. Or logfiles.
+
+	For the web server's configuration, you should look at your 
+	web server's docs, actually it have been tested only on 
+	apache2 but should work on any perl-cgi capable web server.
+
+== REQUERIMENTS ==
+	Copisterio requires an updated version of perl, a web server 
+	with perl-cgi capabilities and mplayer.
+	
+== INSTALLING ==
+	I've recently made a Makefile for copisterio. 
+	When packaging for debian you can make it create a initscript 
+	based on a file, so I've splitted out the default (install) 
+	function and the all function.
+	When calling make with all arg, it installs the initscript.
+	When calling make without args or with install arg it doesnt, 
+	this is the way to do the package if someone's interested.
+
+== TECH INFO ==
+	Copisterio is made of three scripts and a CGI.
+	Copisterio_ttc --> This scripts copy the contents of temp 
+		directory to check directory and changes its mode
+		It also calls copisterio_mt to create thumbs.
+	Copisterio_mt --> This script is based on "Movie Thumnailer"
+		It creates screenshots for use with CGI.
+	index.pl  --> This is the main page script for administration
+		purposes.
+	And it uses some conffiles, located at /usr/share/copisterio/
+

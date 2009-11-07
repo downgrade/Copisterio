@@ -1,0 +1,196 @@
+#!/usr/bin/perl -w
+
+# Copisterio's index.pl
+#
+#   This file is part of Copisterio.
+#
+#       Copisterio is free software: you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation, either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       Copisterio is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with Copisterio.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+use CGI; 
+my $cgi=new CGI; 
+use strict;
+use warnings;
+no warnings 'uninitialized';
+
+# Get config...
+require ("/etc/copisterio/web.config");
+require ("/etc/copisterio/main.config");
+
+# Get user/pass
+require ("./login.pl");
+our $user; our $pass;
+
+our $delcommand; our $title; our $url; our $stylesheet; our $title_image; our $defw; our $defh; our $cr;our %labels; our %path;our $realpath;our $LOGDIR; our $LOGFILE;
+my @params=$cgi->param;my $done=$cgi->param('done');my $errstr; 
+
+# This allows us to call external binaries.
+$ENV{'PATH'}="/bin:/usr/bin";
+
+if ( -e "$LOGDIR/$LOGFILE" ){
+	open (LOG, ">$LOGDIR/$LOGFILE");
+}
+
+sub movefile(){
+	my ($kind,$file)=@_;
+			# Get initial
+		my $initial=substr($file,0,1);
+		
+			# Create initial directory.
+		system ("mkdir -p \"".$path{'biblio'}.$kind."/".$initial."\"");	
+	
+			# Move things to directory
+		system("mv \"$path{'check'}/$kind/$file\"  \"$path{'biblio'}/$kind/$initial/$file\"");
+		
+			# Delete old thumbs
+		unlink $path{'check'}."/movies/thumbs".$file."*";
+
+			# Print debugging info.
+		printf LOG  "[INFO] Created directory",$path{'biblio'},$kind,"/",$initial,"/",$cr,
+				"[INFO]: Moving file",$path{'check'}.$kind."/".$file, " to ",
+				$path{'biblio'},$kind,"/",$initial,"/",$file,$cr;
+	}
+
+sub generatehtml(){
+# Generate header, html starting, image header and form starting.
+	print $cgi->header,$cgi->start_html (-title=>$title,-style=>{-src=>$stylesheet}),
+		  $cgi->div({-class=>'img'},$cgi->h3($cgi->img({-src=>$title_image}))),
+		  $cgi->start_form('POST',$url),
+		  $cgi->hidden(-name=>'done',-value=>1);
+
+# Esta es la parte del formulario correspondiente a las peliculas
+	print $cgi->h2("Peliculas pendientes");
+		my $pathchk=$path{'movies'};
+		my @movfiles=split(/\n/,`ls -1 $pathchk`);
+	
+		foreach my $mov(@movfiles){
+			if ($mov ne "thumbs"){
+				print $cr,"Validar $mov : "; 
+
+				for (split("\n",`cd $pathchk/ && ls -1 thumbs/$mov*`)){ # Foreach thumb...
+					print $cgi->img({-src=>"/movies/$_",
+							-width=>$defw, 
+							-height=>$defh});
+				}	
+	
+				print $cgi->radio_group(-name=>"$mov",
+										-values=>['0','1_movies'],
+										-default=>'0',
+										-linebreack=>'false',
+										-labels=>\%labels),
+										$cr;
+			}
+		}
+	
+# Esta la del audio-
+	my $chkaudio=$path{'audio'};
+	open PLAYLIST,">$realpath/check.xspf";
+
+	print $cgi->h2("Archivos de audio pendientes");
+
+	# Embebbed flash player.
+	print "<object type=\"application/x-shockwave-flash\" width=\"400\" height=\"170\" 
+		   data=\"",$path{'web_player'},"/xspf_player.swf?playlist_url=",$path{'web_main'},"/check.xspf?title=Copisterio\">
+		   <param name=\"movie\" value=\"",$path{'web_player'},"/xspf_player.swf?playlist_url=",$path{'web_main'},"/check.xspf\" /></object>";
+
+	# Create playlist
+	printf PLAYLIST "<?xml version=\"1.0\" encoding=\"UTF-8\"?> 
+					 <playlist version=\"1\" xmlns = \"http://xspf.org/ns/0/\"> 
+					 <title>Copisterio</title><trackList>"; # We start the playlist
+
+	foreach (split(/\n/,`ls -1 $chkaudio`)){
+		if ($_=~/mp3$/){ # Insert mp3 onto it.
+			printf PLAYLIST "<track><location>/music/$_</location><title>$_</title></track>\n";
+						}
+		else {
+			print "<embed type=\"application/x-mplayer2\" src=\"http://localhost/music/$_\" align=\"middle\" width=176 height=144 AutoStart=false showstatusbar=true></embed>";
+			}
+
+	print "Validar $_ ",
+			$cgi->radio_group(
+					-name=>"$_",
+					-values=>['0','1_audio'],
+					-default=>'0',
+					-linebreack=>'false',
+					-labels=>\%labels),
+				$cr;
+			}
+	printf PLAYLIST "</tracklist></playlist>"; # And finally
+	close PLAYLIST;
+
+# Esta la de las imagenes
+my $chkimgs=$path{'imgs'};
+		my @if=split(/\n/,`ls -1 $chkimgs`);
+	print $cgi->h2("Imagenes pendientes");
+
+	foreach my $img(@if){
+		print "Validar $img",
+			$cgi->img({-src=>"/images/$img",
+				-width=>$defw, 
+				-height=>$defh}),
+			$cgi->radio_group(-name=>$img,
+					-values=>['0','1_images'],
+					-default=>'0',
+					-linebreack=>'true',
+					-labels=>\%labels),
+			$cr;
+	}
+
+# Y esta la del resto de archivos
+		my $chkothers=$path{'others'}; 
+		my @of=split(/\n/,`ls -1 $chkothers`);
+	print $cgi->h2("Desconocido"),$cgi->h5("Los siguientes tipos de archivo no han podido ser identificados por copisterio
+					$cr recomendamos que las compruebe antes de validarlas de forma positiva: "),$cr;
+	for my $other(@of){
+		print "Validar \"$other\"",
+		$cgi->radio_group(-name=>$other,
+			-values=>['0','1_others'],
+			-default=>'0',
+			-linebreack=>'true',
+			-labels=>\%labels),
+		$cr;
+	}
+
+	print $cgi->submit,$cgi->end_form,$cgi->end_html;
+}
+
+sub login(){
+	if ($user ne $cgi->param('user') or $pass ne $cgi->param('pass')){
+		print   $cgi->start_form('POST'),
+			"User: ", $cgi->textfield(-name=>'user'),$cr,
+			"Pass: ", $cgi->password_field(-name=>'pass'),
+			$cgi->submit,
+			$cgi->end_form;
+			exit 1;
+	}
+	
+}
+
+# Here starts the action
+	&login;
+	if ($done){ my @res; my $kind; my $file;my @params=$cgi->param;
+		print   $cgi->header,
+				$cgi->start_html(-title=>$title, -stylesheet=>{-src=>$stylesheet}),
+				$cgi->h1("Se han terminado de validar los ficheros"),
+				$cr,$errstr,$cgi->end_html;
+	
+		foreach my $param (@params){ 
+			if (-e $path{'temp'}/$param){my @paramvalue=split("_",$cgi->param($param));#FIXME
+				if ($paramvalue[0]==1){&movefile($paramvalue[1],$param);} # Pass value (yes_kind/no) and filename to movefile.
+				if ($paramvalue[0]==0){system ("$delcommand \"$param\"");} # Deletes if regected
+					      		}
+				}
+		generatehtml();
+	}
+	else{generatehtml();}

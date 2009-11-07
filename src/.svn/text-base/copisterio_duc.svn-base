@@ -1,0 +1,68 @@
+#!/bin/sh
+# Script to check disk usage on copisterio terminals, deleting old stuff and excepting a withelist.
+# Original code by Diego Marquina (Cierzo) <opencierzo@gmail.com>
+# Downgrade Hacklab
+
+# Copisterio's ttc
+#
+#   This file is part of Copisterio.
+#
+#       Copisterio is free software: you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation, either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       Copisterio is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with Copisterio.  If not, see <http://www.gnu.org/licenses/>.
+
+# Check if copisterio is enabled in defaults
+source /etc/default/copisterio_duc
+if [ "$ENABLED" != "1" ]; then
+	exit;
+fi
+
+# Get configuration
+if [ -e /etc/copisterio/duc.config ] 
+then
+	source /etc/copisterio/duc.config
+else
+	echo -e "Could not find configuration file, quitting\n"
+	exit
+fi
+
+function log{
+	if [ -e $LOGDIR ]
+	then
+		echo "Free space remaining $freespace\nLast processed files:\n" > $LOGDIR/$LOGFILE
+		for i in $files; do
+			echo -e "$i\n" >> $LOGDIR/$LOGFILE
+		done
+	else
+		echo -e "ERROR opening log file, log is not going to work\n"
+}
+
+freespace=$(( 110 * 1024 ))
+files=`find $mediadir -printf "%A+ %p\n" | sort -n | cut -d "/" -f 6` 
+real=`df -m  | grep $mediadir | awk '{print $4}'`
+
+for i in $files;do
+	if [ $real -lt "$freespace" ]; then
+		if [ `grep $i $mediadir/whitelist | wc -l` -gt 0 ]; then
+			echo "."
+		else
+			rm $i
+			echo -e "\nDeleting" $i
+			real=`df -m  | grep $mediadir | awk '{print $4}'`
+				
+		fi
+	else 
+	break
+	fi
+done
+	log 
+

@@ -1,0 +1,84 @@
+#!/usr/bin/perl
+# Script to move temporary archives in "copisterio"'s estructure to check-pending files directory, ordered by kind.
+# David Francos Cuartero (XayOn) <yo.orco@gmail.com>
+# Downgrade Hacklab
+
+# Copisterio's ttc
+#
+#   This file is part of Copisterio.
+#
+#       Copisterio is free software: you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation, either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       Copisterio is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with Copisterio.  If not, see <http://www.gnu.org/licenses/>.
+use strict; use warnings; use Switch;
+require ("/etc/copisterio/main.config");
+require ("/etc/copisterio/ttc.config");
+
+# Scoping vars
+my $file; my $kind; my @mime; my $tipo;
+our %path; our $time_to_wait; our $time_to_loop; our $wwwuser;
+our $LOGDIR; our $LOGFILE;
+# PATHS
+my $main=$path{'main'};my $biblio=$path{'biblio'};my $tmp=$path{'temp'};
+
+my ($user,$password,$gid,$uid)=getpwnam("$wwwuser");
+
+sub log(){ $kind=shift; $file=shift;
+	if (-e $LOGDIR){
+		open LOG,">$LOGDIR/$LOGFILE"||print "Could not open logfile $LOGDIR/$LOGFILE";
+			printf LOG "Put $file of kind $kind into ",$path{'$kind'},"\n";
+		close LOG;
+	}
+}
+
+# Define functions
+sub organise(){	
+	$file=shift;
+	my @mime=split("/",`file -i --exclude ascii \"$tmp/$file\"|awk {'print \$NF'}`);
+	switch($mime[0]){	 
+		case /video/	   { &movie($file,$path{'movies'});&log('movies',$file);        } 
+		case /audio/	   { &notmovie($file,$path{'audio'});&log('audio',$file);   	}
+		case /image/	   { &notmovie($file,$path{'images'});&log('images',$file); 	} 
+		else			   { &notmovie($file,$path{'others'});&log('other',$file);      }
+		   }
+}
+
+sub notmovie(){ 
+	$file=shift;
+	$kind=shift; 
+		rename ("$tmp/$file","$kind/$file");
+		chown $uid,$gid,"$kind/$file"; 
+		chmod 0744,"$kind/$file";
+	}
+
+sub movie(){
+		$file=shift;print "[INFO] It's a Movie.\n";
+	system ("chown www-data:www-data $tmp/$file");
+	rename( "$tmp/$file" , "$path{'check'}/MT/$file" );
+	system("copisterio_mt \"".$path{'check'}."/MT/".$file."\" \"".$path{'thumbs'}."/".$file."\" ".$path{'movies'}." &");
+	}
+
+while (1){
+	my $a=`ls -l $tmp`;
+	sleep $time_to_wait;
+	my $b=`ls -l $tmp`;
+
+	if ($a ne $b){
+		print "[WARN] Something i being changed on temp dir\n";
+			}
+	else{
+		for $file(split("\n",`ls -1 $tmp`)){
+			&organise($file);
+			}
+		}
+	sleep $time_to_loop;
+}

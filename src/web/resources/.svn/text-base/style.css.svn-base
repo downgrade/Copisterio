@@ -1,0 +1,7 @@
+div.img{
+	height: auto;
+	width: auto;
+	float: center;
+	text-align: center;
+	      }
+

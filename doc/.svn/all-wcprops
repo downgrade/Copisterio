@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 26
+/svn/!svn/ver/38/trunk/doc
+END
+LICENSE
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/!svn/ver/33/trunk/doc/LICENSE
+END
+to-do
+K 25
+svn:wc:ra_dav:version-url
+V 32
+/svn/!svn/ver/33/trunk/doc/to-do
+END
+README.debianpackaging
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/38/trunk/doc/README.debianpackaging
+END
+howto-copisterio
+K 25
+svn:wc:ra_dav:version-url
+V 43
+/svn/!svn/ver/35/trunk/doc/howto-copisterio
+END

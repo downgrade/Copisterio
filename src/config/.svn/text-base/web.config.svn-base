@@ -1,0 +1,39 @@
+#!/usr/bin/perl
+# Copisterio's index.pl config
+#
+#   This file is part of Copisterio.
+#
+#       Copisterio is free software: you can redistribute it and/or modify
+#       it under the terms of the GNU General Public License as published by
+#       the Free Software Foundation, either version 3 of the License, or
+#       (at your option) any later version.
+#
+#       Copisterio is distributed in the hope that it will be useful,
+#       but WITHOUT ANY WARRANTY; without even the implied warranty of
+#       MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#       GNU General Public License for more details.
+#
+#       You should have received a copy of the GNU General Public License
+#       along with Copisterio.  If not, see <http://www.gnu.org/licenses/>.
+
+# Copisterio main configuration
+# Defaults are ok if you want a local thing.
+# Configure command to delete things.
+our $delcommand="rm";
+
+our $title="Interfaz administrativa de Copisterio"; # Change it to your language
+our $url="/cgi-bin/copisterio/index.pl";
+our $stylesheet="/copisterio/style.css";
+our $title_image="/copisterio/title.png";
+
+our $defw=100; # Default with for images
+our $defh=100; # Default heigh for images
+our $cr="<br />\n"; # Carriage return for html
+our %labels=('0'=>'No', # This part involves language things
+		'1'=> 'Error', 
+		'1_images'=> 'Si',
+		'1_audio'=> 'Si',
+		'1_others'=> 'Si',
+		'1_movies'=>'Si',
+		'1_test'=> 'Si',
+			);

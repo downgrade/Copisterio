@@ -1,0 +1,29 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          copisterio
+# Should-Start:      
+# Required-Start:    
+# Required-Stop:     
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+### END INIT INFO
+
+   case $1 in
+    start)
+    		printf "\n Starting Copisterio check and thumbnail daemon: temp_to_check\n"
+		start-stop-daemon --start -b -m --pid /var/run/copisterio_ttc -c www-data -g www-data --startas /usr/bin/copisterio_ttc
+
+
+    	;;
+    stop) 
+    		printf "\n Stopping Copisterio check and thumbnail daemon\n"
+		start-stop-daemon --stop -m --pid /var/run/copisterio_ttc -c www-data -g www-data 
+		rm /var/run/copisterio_ttc
+	;;
+
+    restart)    	
+	$0 stop
+    	$0 start
+    ;;
+
+esac

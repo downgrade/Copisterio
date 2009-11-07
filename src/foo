@@ -1,0 +1,9 @@
+[main]
+foo=bar
+admdir=./adm
+frecuency=5
+main=./main
+tmpdir=./tmp
+library=./lib
+minspace=2000000
+delete_status=2
